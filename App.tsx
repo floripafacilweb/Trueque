@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Product, TradeOffer, Payment, PlanType, AdminStats } from './types';
 import { db } from './services/db';
-// Fix: Import PLANS directly from constants
 import { PLANS } from './constants';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -10,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import Plans from './pages/Plans';
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -46,6 +46,45 @@ const App: React.FC = () => {
     if (u.isAdmin) {
       addNotification(`¡Bienvenido Admin ${u.name}!`);
     }
+  };
+
+  const handleRegister = (userData: Partial<User>) => {
+    const newUser: User = {
+      id: `u-${Date.now()}`,
+      name: userData.name || 'Usuario',
+      email: userData.email || '',
+      neighborhood: userData.neighborhood || '',
+      city: userData.city || '',
+      province: userData.province || '',
+      plan: userData.plan || PlanType.BASIC,
+      isAdmin: false,
+    };
+
+    db.saveUser(newUser);
+    refreshData();
+    setUser(newUser);
+    
+    // Admin alert logic
+    addNotification(`Alerta Admin: Nuevo usuario registrado (${newUser.email})`);
+    
+    // Redirect to plans to complete setup
+    setCurrentPage('plans');
+  };
+
+  const handleCreateUserByAdmin = (userData: Partial<User>) => {
+    const newUser: User = {
+      id: `u-admin-${Date.now()}`,
+      name: userData.name || '',
+      email: userData.email || '',
+      neighborhood: userData.neighborhood || 'Admin',
+      city: userData.city || '',
+      province: userData.province || 'Admin',
+      plan: userData.plan || PlanType.BASIC,
+      isAdmin: false,
+    };
+    db.saveUser(newUser);
+    refreshData();
+    addNotification(`Usuario ${newUser.name} creado exitosamente.`);
   };
 
   const handleLogout = () => {
@@ -105,12 +144,9 @@ const App: React.FC = () => {
 
   const handleSelectPlan = (plan: PlanType) => {
     if (!user) return;
-    // Fix: Use imported PLANS instead of require to avoid "Cannot find name 'require'" error
     const planObj = PLANS.find(p => p.type === plan);
-    
     if (!planObj) return;
 
-    // Simulate payment creation
     const newPayment: Payment = {
       id: `pay-${Date.now()}`,
       userId: user.id,
@@ -121,11 +157,7 @@ const App: React.FC = () => {
     };
 
     db.savePayment(newPayment);
-    // Note: In real app, we update user plan only after verification.
-    // Here we simulate alert to admin
-    if (user.isAdmin) {
-        addNotification(`Alerta Admin: Nuevo pago de suscripción para verificar (${user.email})`);
-    }
+    addNotification(`Alerta Admin: Nuevo pago de suscripción para verificar (${user.email})`);
 
     alert('Solicitud de cambio de plan enviada. Un administrador verificará tu pago.');
     refreshData();
@@ -164,10 +196,13 @@ const App: React.FC = () => {
             stats={stats}
             onDeleteProduct={onDeleteProduct}
             onVerifyPayment={onVerifyPayment}
+            onCreateUser={handleCreateUserByAdmin}
           />
         );
       case 'login':
         return <Login onLogin={handleLogin} users={users} />;
+      case 'register':
+        return <Register onRegister={handleRegister} onNavigate={setCurrentPage} />;
       case 'plans':
         return <Plans onSelectPlan={handleSelectPlan} currentPlan={user?.plan} />;
       default:
@@ -184,7 +219,6 @@ const App: React.FC = () => {
         onSearch={() => {}} 
       />
       
-      {/* Admin Alerts Overlay */}
       {notifications.length > 0 && (
         <div className="fixed top-20 right-4 z-[100] space-y-2 pointer-events-none">
           {notifications.map((n, i) => (
@@ -202,7 +236,7 @@ const App: React.FC = () => {
       <footer className="bg-white border-t py-10 mt-20">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h4 className="font-bold mb-4">Trueque</h4>
+            <h4 className="font-bold mb-4 text-blue-900 italic">Trueque</h4>
             <ul className="text-sm text-gray-500 space-y-2">
               <li>Quiénes somos</li>
               <li>Blog</li>

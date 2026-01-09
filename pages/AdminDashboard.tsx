@@ -1,7 +1,7 @@
 
-import React from 'react';
-import { User, Product, Payment, AdminStats } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import React, { useState } from 'react';
+import { User, Product, Payment, AdminStats, PlanType } from '../types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AdminDashboardProps {
   users: User[];
@@ -10,9 +10,13 @@ interface AdminDashboardProps {
   stats: AdminStats;
   onDeleteProduct: (id: string) => void;
   onVerifyPayment: (id: string) => void;
+  onCreateUser: (u: Partial<User>) => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, products, payments, stats, onDeleteProduct, onVerifyPayment }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, products, payments, stats, onDeleteProduct, onVerifyPayment, onCreateUser }) => {
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', city: '', plan: PlanType.BASIC });
+
   const chartData = [
     { name: 'Usuarios', count: users.length },
     { name: 'Productos', count: products.length },
@@ -20,9 +24,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ users, products, paymen
     { name: 'Ingresos (k)', count: stats.totalRevenue / 1000 },
   ];
 
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    onCreateUser({ ...newUser, isAdmin: false, province: 'Admin-Generated', neighborhood: 'Admin-Generated' });
+    setShowUserForm(false);
+    setNewUser({ name: '', email: '', city: '', plan: PlanType.BASIC });
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Panel de Control Admin</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Panel de Control Admin</h1>
+        <button 
+          onClick={() => setShowUserForm(!showUserForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-sm"
+        >
+          {showUserForm ? 'Cerrar Formulario' : '+ Generar Usuario'}
+        </button>
+      </div>
+
+      {showUserForm && (
+        <div className="bg-white p-6 rounded-xl shadow-md border border-blue-100 mb-8 animate-in fade-in slide-in-from-top-4">
+          <h3 className="text-lg font-bold mb-4">Generar Nuevo Usuario</h3>
+          <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input 
+              placeholder="Nombre" 
+              className="p-2 border rounded" 
+              value={newUser.name} 
+              onChange={e => setNewUser({...newUser, name: e.target.value})} 
+              required 
+            />
+            <input 
+              placeholder="Email" 
+              type="email" 
+              className="p-2 border rounded" 
+              value={newUser.email} 
+              onChange={e => setNewUser({...newUser, email: e.target.value})} 
+              required 
+            />
+            <input 
+              placeholder="Ciudad" 
+              className="p-2 border rounded" 
+              value={newUser.city} 
+              onChange={e => setNewUser({...newUser, city: e.target.value})} 
+              required 
+            />
+            <select 
+              className="p-2 border rounded"
+              value={newUser.plan}
+              onChange={e => setNewUser({...newUser, plan: e.target.value as PlanType})}
+            >
+              {Object.values(PlanType).map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button type="submit" className="md:col-span-4 bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700">
+              Crear Usuario
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
