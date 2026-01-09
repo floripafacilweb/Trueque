@@ -1,0 +1,7 @@
+{
+  "name": "Trueque - Intercambia sin Dinero",
+  "description": "Una plataforma de intercambio de productos inspirada en Mercado Libre donde los usuarios pueden realizar trueques de todo tipo de artículos, desde alimentos hasta vehículos, con un sistema de suscripciones y publicaciones destacadas por cercanía.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
